@@ -1,5 +1,5 @@
 """
-Profiling 4 ways to call functions with an integer index.
+Profiling 5 ways to call functions with an integer index.
 
 Each round, a large number of random indexes are generated, calling all the
 functions (including the default). The functions are shuffled each round and
@@ -15,6 +15,7 @@ def A()->str: return "A"
 def B()->str: return "B"
 def C()->str: return "C"
 def D()->str: return "D" # default
+# fmt:on
 
 
 def if_else(n: int) -> str:
@@ -60,8 +61,17 @@ def dict_var(n: int) -> str:
     return funcs.get(n, D)()
 
 
+def list_prop(n: int) -> str:
+    if 0 <= n < len(list_prop._funcs):
+        return list_prop._funcs[n]()
+    return D()
+
+
+list_prop._funcs = [A, B, C]
+
+
 def main():
-    funcs = [if_else, match_stmt, dict_prop, dict_var]
+    funcs = [if_else, match_stmt, dict_prop, dict_var, list_prop]
     for i in range(16):
         print(f"==== round {i} ====")
         nums = random.choices(range(5), k=1_000_000)
