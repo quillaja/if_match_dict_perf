@@ -1,17 +1,20 @@
+"""
+Profiling 4 ways to call functions with an integer index.
+
+Each round, a large number of random indexes are generated, calling all the
+functions (including the default). The functions are shuffled each round and
+called once for each of the indexes.
+"""
+
 import random
-import traceback
-import tracemalloc
-from contextlib import contextmanager
 from cProfile import Profile
-from typing import Any, Generator, final
 
 
 # fmt:off
 def A()->str: return "A"
 def B()->str: return "B"
 def C()->str: return "C"
-def D()->str: return "D"
-# fmt:on
+def D()->str: return "D" # default
 
 
 def if_else(n: int) -> str:
@@ -57,49 +60,16 @@ def dict_var(n: int) -> str:
     return funcs.get(n, D)()
 
 
-snapshots: dict[str, list[tracemalloc.StatisticDiff]] = {}
-
-
-@contextmanager
-def trace(name: str) -> Generator[None, None, None]:
-    before = tracemalloc.take_snapshot()
-    try:
-        yield
-    finally:
-        after = tracemalloc.take_snapshot()
-        snapshots[name] = after.compare_to(before, "lineno")
-
-
-def print_snapshots():
-    for name, stats in snapshots.items():
-        print()
-        print(name)
-        stats = [s for s in stats if "main.py" in str(s.traceback)]
-        for line in stats:
-            print(line)
-
-
 def main():
-    # tracemalloc.start()
-
     funcs = [if_else, match_stmt, dict_prop, dict_var]
-    nums = random.choices(range(5), k=500_000)
     for i in range(16):
-        print(f"-- round {i} --")
+        print(f"==== round {i} ====")
+        nums = random.choices(range(5), k=1_000_000)
         random.shuffle(funcs)
         for f in funcs:
-            print(f.__name__)
+            print(f" {f.__name__}")
             for n in nums:
                 f(n)
-
-    # for f in (if_else, match_stmt, dict_prop, dict_var):
-    #     # with trace(f.__name__):
-    #     before = tracemalloc.take_snapshot()
-    #     f(1)
-    #     after = tracemalloc.take_snapshot()
-    #     snapshots[f.__name__] = after.compare_to(before, "lineno")
-
-    # print_snapshots()
 
 
 if __name__ == "__main__":
